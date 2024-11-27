@@ -8,10 +8,8 @@ import asyncio
 app = FastAPI()
 
 redis_handler = RedisHandler(Redis(host='localhost', port=6379, db=0))
-session_manager = SessionManager(redis_handler)
+session_manager = SessionManager()
 
-# Store the current drawing state
-current_drawing_state = {}
 
 @app.get("/")
 def read_root():
@@ -19,8 +17,7 @@ def read_root():
 
 async def handle_message(session_id: str, data: str):
     """Process the incoming message in a separate thread."""
-    # Update the current drawing state
-    current_drawing_state[session_id] = data
+    redis_handler.set(f"drawing_{session_id}", data)
     await session_manager.broadcast(session_id, data)
 
 @app.websocket("/ws/{session_id}")
@@ -29,8 +26,9 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
     session_manager.add_user_to_session(session_id, websocket)
 
     # Send the current drawing state to the newly connected user
-    if session_id in current_drawing_state:
-        await websocket.send_text(current_drawing_state[session_id])
+    current_state = redis_handler.get(f"drawing_{session_id}")
+    if current_state:
+        await websocket.send_text(current_state)
 
     try:
         while True:

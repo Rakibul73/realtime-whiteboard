@@ -1,10 +1,8 @@
 from typing import List
 from fastapi import WebSocket
-from .redis_handler import RedisHandler
 
 class SessionManager:
-    def __init__(self, redis_handler: RedisHandler):
-        self.redis_handler = redis_handler
+    def __init__(self):
         self.sessions = {}
 
     def add_user_to_session(self, session_id: str, websocket: WebSocket):
@@ -20,6 +18,4 @@ class SessionManager:
         if session_id in self.sessions:
             for user in self.sessions[session_id]:
                 await user.send_text(data)
-        # Publish to Redis for synchronization across servers
-        self.redis_handler.publish(session_id, {"data": data})
 

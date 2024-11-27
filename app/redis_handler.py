@@ -4,13 +4,13 @@ import json
 class RedisHandler:
     def __init__(self, redis_client: redis.Redis):
         self.redis_client = redis_client
+    
+    def get(self, key: str) -> str:
+        value = self.redis_client.get(key)
+        if value:
+            return value.decode('utf-8')
+        return None
 
-    def publish(self, channel: str, message: dict):
-        """Publish a message to the Redis channel."""
-        self.redis_client.publish(channel, json.dumps(message))
 
-    def subscribe(self, channel: str):
-        """Subscribe to a Redis channel."""
-        pubsub = self.redis_client.pubsub()
-        pubsub.subscribe(channel)
-        return pubsub
+    def set(self, key: str, value: str):
+        self.redis_client.set(key, value)
